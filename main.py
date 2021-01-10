@@ -4,7 +4,11 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import api_calls
+import numpy as np
+import skimage.io as sio
 
+
+image_cache_filename = 'img.png'
 
 fig = go.Figure(
     data=[go.Bar(y=[2, 1, 3])],
@@ -67,15 +71,40 @@ def get_visual(address, mode):
     if not address or not mode:
         return no_display
 
-    x, y, z = api_calls.data(address, 10, mode, grid=10)
+    f = open(image_cache_filename, 'wb')
+    for chunk in api_calls.get_map_iterator(address, api_calls.DEFAULT_ZOOM):
+        if chunk:
+            f.write(chunk)
+    f.close()
+
+    lat, lng = api_calls.origin_coordinates(address)
+    radius = api_calls.zoom_to_radius(api_calls.DEFAULT_ZOOM, lat)
+
+    x, y, z = api_calls.data(address, radius, mode, grid=10)
 
     fig = go.Figure(
         data=[go.Surface(z=z, x=x, y=y)],
         layout_title_text=f"From {address} by {mode}"
     )
+
+    #img = sio.imread(image_cache_filename, plugin='matplotlib')
+    canvas = np.zeros((api_calls.MAX_STATIC_MAP_SIZE, api_calls.MAX_STATIC_MAP_SIZE))
+    x_max = np.amax(x)
+    x_min = np.amin(x)
+    y_max = np.amax(y)
+    y_min = np.amin(y)
+
+    x = np.linspace(x_min, x_max, num=api_calls.MAX_STATIC_MAP_SIZE)
+    y = np.linspace(y_min, y_max, num=api_calls.MAX_STATIC_MAP_SIZE)
+
+    fig.add_surface(x=x, y=y, z=canvas) #surfacecolor=img)
+
     fig.update_layout(title=f'From {address} by {mode}', autosize=False,
-                  width=500, height=500,
-                  margin=dict(l=65, r=50, b=65, t=90))
+                  width=1000, height=1000,
+                  margin=dict(l=10, r=10, b=65, t=90))
+
+
+
 
     return html.Div([dcc.Graph(id="graph", figure=fig)])
 

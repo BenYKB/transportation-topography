@@ -7,7 +7,7 @@ import skimage.io as sio
 
 MAX_STATIC_MAP_SIZE = 640
 DEFAULT_ZOOM = 15
-MAP_STYLE = 'satellite'
+DEFAULT_MAP_TYPE = 'satellite'
 
 key_file = open("key.txt", "r")
 KEY = str(key_file.read())
@@ -94,8 +94,8 @@ def data(address, radius, mode, grid=10):
     return X, Y, Z
 
 
-def get_map_iterator(address, zoom, style=MAP_STYLE, side_length=MAX_STATIC_MAP_SIZE):
-    return gmaps.static_map(size=(side_length, side_length), center=address, zoom=zoom, style=style)
+def get_map_iterator(address, zoom, map_type=DEFAULT_MAP_TYPE, side_length=MAX_STATIC_MAP_SIZE):
+    return gmaps.static_map(size=(side_length, side_length), center=address, zoom=zoom, maptype=map_type, format='png')
 
 
 def zoom_to_radius(zoom, latitude):
