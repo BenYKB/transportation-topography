@@ -45,6 +45,7 @@ display_page = html.Div([
 no_display = html.Div([])
 
 app.layout = html.Div([
+    html.Title("Transportation Topography"),
     dcc.Location(id='url', refresh=False),
     main_page,
     html.Div(id='visual-content')

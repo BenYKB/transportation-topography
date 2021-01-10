@@ -3,13 +3,16 @@ import googlemaps
 from datetime import datetime
 import numpy as np
 import math
+import skimage.io as sio
 
 MAX_STATIC_MAP_SIZE = 640
 DEFAULT_ZOOM = 15
+MAP_STYLE = 'satellite'
 
 key_file = open("key.txt", "r")
 KEY = str(key_file.read())
 gmaps = googlemaps.Client(key=KEY)
+
 
 def origin_coordinates(address):
     '''
@@ -90,22 +93,20 @@ def data(address, radius, mode, grid=10):
     return X, Y, Z
 
 
-def get_map_iterator(address, zoom):
-    orig_lat, orig_lng = origin_coordinates(address)
-
-    return gmaps.static_map(size=(640,640), center=address, zoom=zoom, style='satellite')
+def get_map_iterator(address, zoom, style=MAP_STYLE, side_length=MAX_STATIC_MAP_SIZE):
+    return gmaps.static_map(size=(side_length, side_length), center=address, zoom=zoom, style=style)
 
 
 def zoom_to_radius(zoom, latitude):
     '''
     Assumes 640x640 image
 
-#     :param zoom: google static maps API zoom. int (1-20)
-#     :param latitude: from equator, degrees
-#     :return: radius to search based on zoom in km
-#     '''
+     :param zoom: google static maps API zoom. int (1-20)
+     :param latitude: from equator, degrees
+     :return: radius to search based on zoom in km
+     '''
 
-#     metersPerPx = 156543.03392 * math.cos(latitude * math.PI / 180) / math.pow(2, zoom)
+    metersPerPx = 156543.03392 * math.cos(latitude * math.pi / 180) / 2 ** zoom
 
-#     return metersPerPx / 1000.0 * (MAX_STATIC_MAP_SIZE // 2)
+    return metersPerPx / 1000.0 * (MAX_STATIC_MAP_SIZE // 2)
 
