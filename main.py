@@ -16,7 +16,7 @@ main_page = html.Div([
     html.Div([
         html.H1('\n\rCommuter Transportation Topography')
     ]),
-    html.P('Generates a visualization of transportation times for locations around you.'),
+    html.P('A visualization of transportation times for locations around you'),
     html.Hr(),
     html.Div([
         html.H5('How do you get around?'),
@@ -31,9 +31,9 @@ main_page = html.Div([
     ], style={'margin-top':'20px', 'margin-bottom':'20px'}),
     html.Div([
         html.H5('Where would you like to start from?'),
-        dcc.Input(id="address", placeholder='1st Street, City, Province, Country', type='text', size='30')
+        dcc.Input(id="address", placeholder='My Street, City, Province, Country', type='text', size='30')
     ]),
-    dbc.Button('Go!', id='go_button', color="primary", className='mr-1', outline=False, style={'margin':'20px'}),
+    dbc.Button('Go!', id='go_button', color="primary", className='mr-1', outline=False, style={'margin':'20px', 'border-radius':'5px'}),
 
 ], style={'text-align':'center'})
 

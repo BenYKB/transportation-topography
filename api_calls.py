@@ -2,6 +2,9 @@ import map_methods
 import googlemaps
 from datetime import datetime
 import numpy as np
+import math
+
+MAX_STATIC_MAP_SIZE = 640
 
 def data(address, radius, mode, grid=5):
     ''' Gets x, y and z data related to travel times to locations 
@@ -59,4 +62,19 @@ def data(address, radius, mode, grid=5):
 
 
 
+
+def get_map(address, zoom):
+
+def zoom_to_radius(zoom, latitude):
+    '''
+    Assumes 640x640 image
+
+    :param zoom: google static maps API zoom. int (1-20)
+    :param latitude: from equator, degrees
+    :return: radius to search based on zoom in km
+    '''
+
+    metersPerPx = 156543.03392 * Math.cos(latitude * Math.PI / 180) / Math.pow(2, zoom)
+
+    return metersPerPx / 1000.0 * (MAX_STATIC_MAP_SIZE // 2)
 
