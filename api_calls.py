@@ -4,7 +4,7 @@ import json
 import numpy as np
 from matplotlib import pyplot as plt
 
-RADIUS = 10.0 # [km]
+RADIUS = 5.0 # [km]
 GRID = 5
 LATCONV = 110.574 # [km]
 LNGCONV = 111.320 # *cos(latitude) [km]
@@ -57,12 +57,12 @@ def print_pretty(json_dict):
 f = open('metrotown_geocode.txt','r')
 mt_lat, mt_lng = getlatlng(f)
 
-rad_lat, rad_lng = dist2deg(5.0, mt_lat, mt_lng)
+rad_lat, rad_lng = dist2deg(RADIUS, mt_lat, mt_lng)
 
-x = np.linspace(mt_lng-rad_lng, mt_lng+rad_lng, GRID)
-y = np.linspace(mt_lat-rad_lat, mt_lat+rad_lat, GRID)
+X = np.linspace(mt_lng-rad_lng, mt_lng+rad_lng, GRID)
+Y = np.linspace(mt_lat-rad_lat, mt_lat+rad_lat, GRID)
 
-xx, yy = np.meshgrid(x, y)
+xx, yy = np.meshgrid(X, Y)
 # plt.plot(xx, yy, marker='.', color='k', linestyle='none')
 # plt.show()
 
@@ -78,7 +78,13 @@ origin = coord_format(mt_lat, mt_lng)
 #     json.dump(dmatrix ,f)
 f = open('metrotown_times.txt', 'r')
 times = get_times(f)
-print(times)
+# print(times)
+
+rows = []
+for i in range(GRID):
+  rows.append(times[0+i*GRID:GRID+i*GRID])
+
+Z = np.stack(rows)
 
 data = zip(np.ndarray.flatten(xx), np.ndarray.flatten(yy), times)
 
