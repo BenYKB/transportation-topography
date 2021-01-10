@@ -103,9 +103,6 @@ def get_visual(address, mode):
                   width=1000, height=1000,
                   margin=dict(l=10, r=10, b=65, t=90))
 
-
-
-
     return html.Div([dcc.Graph(id="graph", figure=fig)])
 
 
