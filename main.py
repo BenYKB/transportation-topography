@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import api_calls
 import numpy as np
 import skimage.io as sio
-
+import requests
 
 image_cache_filename = 'img.png'
 
@@ -52,7 +52,7 @@ app.layout = html.Div([
     html.Title("Transportation Topography"),
     dcc.Location(id='url', refresh=False),
     main_page,
-    html.Div(id='visual-content')
+    html.Div(id='visual-content',style={'text-align':'center'})
 ], style={'background-color':'MintCream'})
 
 @app.callback(dash.dependencies.Output('visual-content', 'children'),
@@ -62,7 +62,7 @@ app.layout = html.Div([
 def load_map(n_clicks, address, mode):
     print(address)
     print(mode)
-    return get_visual(address,mode) if n_clicks else no_display
+    return get_visual(address, mode) if n_clicks else no_display
 
 
 def get_visual(address, mode):
@@ -71,39 +71,66 @@ def get_visual(address, mode):
     if not address or not mode:
         return no_display
 
+
+    # f = open(image_cache_filename, 'wb')
+    # for chunk in api_calls.get_map_iterator(address, api_calls.DEFAULT_ZOOM):
+    #     if chunk:
+    #         f.write(chunk)
+    #f.close()
+    lat, lng = api_calls.origin_coordinates(address)
+    print(lat)
+    print(lng)
+#52.520103, 13.404871
+
+    my_zoom = 11
+    my_grid = 20
+    my_img_side = 400
+
     f = open(image_cache_filename, 'wb')
-    for chunk in api_calls.get_map_iterator(address, api_calls.DEFAULT_ZOOM):
+    for chunk in api_calls.gmaps.static_map(size=(my_img_side, my_img_side),
+                                   center=(lat, lng),
+                                   zoom=my_zoom):
         if chunk:
             f.write(chunk)
     f.close()
 
-    lat, lng = api_calls.origin_coordinates(address)
-    radius = api_calls.zoom_to_radius(api_calls.DEFAULT_ZOOM, lat)
+    radius = api_calls.zoom_to_radius(my_zoom, lat, my_img_side)
 
-    x, y, z = api_calls.data(address, radius, mode, grid=10)
+    x, y, z = api_calls.data(address, radius, mode, grid=my_grid)
 
     fig = go.Figure(
-        data=[go.Surface(z=z, x=x, y=y)],
+        data=[go.Surface(z=z, x=x, y=y, opacity=0.5)],
         layout_title_text=f"From {address} by {mode}"
     )
+    fig.update_traces(colorbar_thickness=50,
+                      contours_z=dict(show=True, usecolormap=True,
+                                      project_z=True),
+                      colorscale='Turbo')
 
-    #img = sio.imread(image_cache_filename, plugin='matplotlib')
-    canvas = np.zeros((api_calls.MAX_STATIC_MAP_SIZE, api_calls.MAX_STATIC_MAP_SIZE))
+    img = sio.imread(image_cache_filename, as_gray=True)
+    img = np.flipud(img)
+
+    canvas = np.zeros((my_img_side, my_img_side))
     x_max = np.amax(x)
     x_min = np.amin(x)
     y_max = np.amax(y)
     y_min = np.amin(y)
 
-    x = np.linspace(x_min, x_max, num=api_calls.MAX_STATIC_MAP_SIZE)
-    y = np.linspace(y_min, y_max, num=api_calls.MAX_STATIC_MAP_SIZE)
+    x = np.linspace(x_min, x_max, num=my_img_side)
+    y = np.linspace(y_min, y_max, num=my_img_side)
 
-    fig.add_surface(x=x, y=y, z=canvas) #surfacecolor=img)
+    fig.add_surface(x=x, y=y, z=canvas, surfacecolor=img, colorscale='gray')
 
-    fig.update_layout(title=f'From {address} by {mode}', autosize=False,
-                  width=1000, height=1000,
-                  margin=dict(l=10, r=10, b=65, t=90))
+    fig.update_layout(title_font_size=30,
+                      autosize=False,
+                      height=1200, width=1200,
+                      margin=dict(l=60, r=60, b=60, t=100, pad=50),
+                      scene=dict(
+                          xaxis_title='Longitude (degrees)',
+                          yaxis_title='Latitude (degrees)',
+                          zaxis_title='Travel time (minutes)'))
 
-    return html.Div([dcc.Graph(id="graph", figure=fig)])
+    return html.Div([dcc.Graph(id="graph", figure=fig)], style={'text-align':'center'})
 
 
 if __name__ == '__main__':

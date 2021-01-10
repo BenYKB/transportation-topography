@@ -11,7 +11,7 @@ DEFAULT_MAP_TYPE = 'satellite'
 
 key_file = open("key.txt", "r")
 KEY = str(key_file.read())
-gmaps = googlemaps.Client(key=KEY)
+gmaps = googlemaps.Client(key=KEY, timeout=40, queries_per_second=1)
 
 
 def origin_coordinates(address):
@@ -95,10 +95,11 @@ def data(address, radius, mode, grid=10):
 
 
 def get_map_iterator(address, zoom, map_type=DEFAULT_MAP_TYPE, side_length=MAX_STATIC_MAP_SIZE):
-    return gmaps.static_map(size=(side_length, side_length), center=address, zoom=zoom, maptype=map_type, format='png')
+    print(address)
+    return gmaps.static_map(size=(side_length, side_length), center=address, zoom=zoom, maptype=map_type)
 
 
-def zoom_to_radius(zoom, latitude):
+def zoom_to_radius(zoom, latitude, img_side):
     '''
     Assumes 640x640 image
 
@@ -109,5 +110,5 @@ def zoom_to_radius(zoom, latitude):
 
     metersPerPx = 156543.03392 * math.cos(latitude * math.pi / 180) / 2 ** zoom
 
-    return metersPerPx / 1000.0 * (MAX_STATIC_MAP_SIZE // 2)
+    return np.abs(metersPerPx / 1000.0 * (img_side // 2))
 
