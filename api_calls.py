@@ -83,18 +83,18 @@ def data(address, radius, mode, grid=10):
 
 
 
-def get_map(address, zoom):
+# def get_map(address, zoom):
 
-def zoom_to_radius(zoom, latitude):
-    '''
-    Assumes 640x640 image
+# def zoom_to_radius(zoom, latitude):
+#     '''
+#     Assumes 640x640 image
 
-    :param zoom: google static maps API zoom. int (1-20)
-    :param latitude: from equator, degrees
-    :return: radius to search based on zoom in km
-    '''
+#     :param zoom: google static maps API zoom. int (1-20)
+#     :param latitude: from equator, degrees
+#     :return: radius to search based on zoom in km
+#     '''
 
-    metersPerPx = 156543.03392 * math.cos(latitude * math.PI / 180) / math.pow(2, zoom)
+#     metersPerPx = 156543.03392 * math.cos(latitude * math.PI / 180) / math.pow(2, zoom)
 
-    return metersPerPx / 1000.0 * (MAX_STATIC_MAP_SIZE // 2)
+#     return metersPerPx / 1000.0 * (MAX_STATIC_MAP_SIZE // 2)
 
