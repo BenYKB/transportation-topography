@@ -42,7 +42,7 @@ def data(address, radius, mode, grid=10):
     :rtype: X, Y, Z. If N = grid value,
             X: N length array of longitude values
             Y: N length array of latitude values
-            Z: NxN array of travel times
+            Z: NxN array of travel times in minutes
     '''
     orig_lat, orig_lng = origin_coordinates(address)
 
@@ -89,6 +89,7 @@ def data(address, radius, mode, grid=10):
     times = np.concatenate(times_list)
 
     Z = np.reshape(times,(grid,grid))
+    Z = Z/60.0 # convert from s to min
 
     return X, Y, Z
 

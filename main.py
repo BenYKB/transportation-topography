@@ -73,9 +73,9 @@ def get_visual(address, mode):
         data=[go.Surface(z=z, x=x, y=y)],
         layout_title_text=f"From {address} by {mode}"
     )
-    # fig.update_layout(title=f'From {address} by {mode}', autosize=False,
-    #               width=500, height=500,
-    #               margin=dict(l=65, r=50, b=65, t=90))
+    fig.update_layout(title=f'From {address} by {mode}', autosize=False,
+                  width=500, height=500,
+                  margin=dict(l=65, r=50, b=65, t=90))
 
     return html.Div([dcc.Graph(id="graph", figure=fig)])
 

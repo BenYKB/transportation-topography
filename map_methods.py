@@ -25,7 +25,7 @@ def get_times(dmatrix):
         if dmat['rows'][0]['elements'][i]['status'] == 'ZERO_RESULTS':
             times[i] = -1000
         else:
-            times[i] = dmat['rows'][0]['elements'][i]['duration']['value'] # units in ms
+            times[i] = dmat['rows'][0]['elements'][i]['duration']['value'] # units in s
     #        dists[i] = dmat['rows'][0]['elements'][i]['distance']['value'] # units in m
     # return times, dists
     return times
