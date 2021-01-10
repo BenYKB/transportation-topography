@@ -6,21 +6,19 @@ import math
 
 MAX_STATIC_MAP_SIZE = 640
 
-def data(address, radius, mode, grid=5):
+def data(address, radius, mode, grid=10):
     ''' Gets x, y and z data related to travel times to locations 
     in specified radius from a specified location.
 
-    :param address: A string specifying street address, city, 
-                    province and/or country. Example:
-                    '4700 Kingsway, Burnaby, BC'
+    :param address: Example: '4700 Kingsway, Burnaby, BC'
+                    string. Street address, city, province and/or country. 
 
-    :param radius: A float in kilometers specifying the radius from
-                   the address to map.
+    :param radius: float, in km. The radius from the address to map.
 
-    :param mode: A string. "driving", "walking", "bicycling", 
-                 or "transit"
+    :param mode: "driving", "walking", "bicycling", or "transit"
 
-    :param grid: Spacing of grid. Default is 5
+    :param grid: Spacing of grid. Default is 10
+    :type grid: int
 
     :rtype: X, Y, Z. If N = grid value,
             X: N length array of longitude values
@@ -43,19 +41,41 @@ def data(address, radius, mode, grid=5):
     xx, yy = np.meshgrid(X, Y)
 
     coordinates = np.array(list(zip(np.ndarray.flatten(xx), np.ndarray.flatten(yy)))) # [0] is lng [1] is lat
-
-    dests = map_methods.coord_format(coordinates[0][1], coordinates[0][0])
-    for i in range(1, grid**2):
-        dests = dests + '|' + map_methods.coord_format(coordinates[i][1], coordinates[i][0])
+    
     origin = map_methods.coord_format(orig_lat, orig_lng)
+    
+    N = grid**2
+    n = N//25
+    r = N%25
+    dest_list = []
+    for i in range(n):
+        dests = map_methods.coord_format(coordinates[0+i*25][1], coordinates[0+i*25][0])
+        for i in range(1+i*25, 25+i*25):
+            dests = dests + '|' + map_methods.coord_format(coordinates[i][1], coordinates[i][0])
+        dest_list.append(dests)
+    if r != 0:
+        dests = map_methods.coord_format(coordinates[n*25][1], coordinates[n*25][0])
+        for i in range(1+n*25, N):
+            dests = dests + '|' + map_methods.coord_format(coordinates[i][1], coordinates[i][0])
+        dest_list.append(dests)
 
-    dmatrix = gmaps.distance_matrix(origin, dests, mode=mode)
-    times = map_methods.get_times(dmatrix)
+    if mode != 'transit':
+        dmatrix_list = []
+        for dests in dest_list:
+            dmatrix_list.append(gmaps.distance_matrix(origin, dests, mode=mode))
+    else:
+        noon = datetime.now()
+        noon = noon.replace(hour=12,minute=0,second=0,microsecond=0)
+        dmatrix_list = []
+        for dests in dest_list:
+            dmatrix_list.append(gmaps.distance_matrix(origin, dests, mode='transit', departure_time=noon))
+    
+    times_list = []
+    for dmatrix in dmatrix_list:
+        times_list.append(map_methods.get_times(dmatrix))
+    times = np.concatenate(times_list)
 
-    rows = []
-    for i in range(grid):
-        rows.append(times[0+i*grid:grid+i*grid])
-    Z = np.stack(rows)
+    Z = np.reshape(times,(grid,grid))
 
     return X, Y, Z
 

@@ -5,19 +5,28 @@ LATCONV = 110.574 # [km]
 LNGCONV = 111.320 # *cos(latitude) [km]
 
 def getlatlng(geocode):
-    gc = json.load(geocode)
+    if hasattr(geocode, 'read'):
+        gc = json.load(geocode)
+    else:
+        gc = geocode
     lat = gc[0]['geometry']['location']['lat']
     lng = gc[0]['geometry']['location']['lng']
     return lat, lng
 
 def get_times(dmatrix):
-    dmat = json.load(dmatrix)
+    if hasattr(dmatrix, 'read'):
+        dmat = json.load(dmatrix)
+    else:
+        dmat = dmatrix
     length = len(dmat['rows'][0]['elements'])
     times = np.zeros(length)
     # dists = np.zeros(length) 
     for i in range(length):
-        times[i] = dmat['rows'][0]['elements'][i]['duration']['value'] # units in ms
-    #     dists[i] = dmat['rows'][0]['elements'][i]['distance']['value'] # units in m
+        if dmat['rows'][0]['elements'][i]['status'] == 'ZERO_RESULTS':
+            times[i] = -1000
+        else:
+            times[i] = dmat['rows'][0]['elements'][i]['duration']['value'] # units in ms
+    #        dists[i] = dmat['rows'][0]['elements'][i]['distance']['value'] # units in m
     # return times, dists
     return times
 
