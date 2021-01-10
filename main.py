@@ -58,11 +58,13 @@ main_page = html.Div([
     ]), 
     html.Div([
         html.H5('How far would you like to go?'),
-        dbc.Button("Neighbourhood", color="secondary", className="mr-1", id='nbhd'), # value 12, ~6.6 km
-        dbc.Button("District", color="secondary", className="mr-1", id='district'), # value 11, ~6.6 km
-        dbc.Button("City", color="secondary", className="mr-1", id='city'), # value 10, ~6.6 km
-        dbc.Button("Region", color="secondary", className="mr-1", id='region'), # value 9, ~6.6 km
-    ], style={'margin-bottom':'20px'}),
+        dbc.ButtonGroup([
+            dbc.Button("Neighbourhood", color="info",  outline=True, className="mr-1", id='nbhd', n_clicks_timestamp=-1), # value 12, ~6.6 km
+            dbc.Button("District", color="info", outline=True, className="mr-1", id='district', n_clicks_timestamp=-1), # value 11, ~6.6 km
+            dbc.Button("City", color="info", outline=True, className="mr-1", id='city', n_clicks_timestamp=-1), # value 10, ~6.6 km
+            dbc.Button("Region", color="info", outline=True, className="mr-1", id='region', n_clicks_timestamp=-1)] # value 9, ~6.6 km)
+        , id='zoom-buttons')
+    ], style={'margin-bottom':'20px'}, id='distance-buttons'),
     html.Div([
         html.H5('Resolution'),
         dcc.Slider(
@@ -99,21 +101,47 @@ app.layout = html.Div([
     html.Div(id='visual-content',style={'text-align':'center'})
 ], style={'background-color':'MintCream'})
 
-@app.callback(dash.dependencies.Output('visual-content', 'children'),
+@app.callback([dash.dependencies.Output('visual-content', 'children'),
+              dash.dependencies.Output('nbhd', 'active'),
+              dash.dependencies.Output('district', 'active'),
+              dash.dependencies.Output('city', 'active'),
+              dash.dependencies.Output('region', 'active')],
               [dash.dependencies.Input('go_button', 'n_clicks')],
+              [dash.dependencies.State('nbhd', 'n_clicks_timestamp')],
+              [dash.dependencies.State('district', 'n_clicks_timestamp')],
+              [dash.dependencies.State('city', 'n_clicks_timestamp')],
+              [dash.dependencies.State('region', 'n_clicks_timestamp')],
               [dash.dependencies.State('address', 'value')],
               [dash.dependencies.State('mode', 'value')],
               [dash.dependencies.State('grid', 'value')])
-def load_map(n_clicks, address, mode, grid):
+def load_map(n_clicks, nbhd, district, city, region, address, mode, grid):
+    click_ts = np.array([nbhd, district, city, region])
+    latest_click = np.amax(click_ts)
+
+    if latest_click == -1:
+        print("no button")
+        return no_display, False, False, False, False
+
+    i = np.argmax(click_ts)
+
+    button_to_zoom = [12,11,10,9]
+    zoom = button_to_zoom[i]
+
+    activations = [False, False, False, False]
+    activations[i] = True
+
     print(address)
     print(mode)
     print(grid)
-    return get_visual(address,mode, grid) if n_clicks else no_display
+    print(zoom)
+
+    if n_clicks and address and mode:
+        return get_visual(address, mode, grid, zoom), activations[0], activations[1], activations[2], activations[3]
+    else:
+        return no_display, False, False, False, False
 
 
-def get_visual(address, mode, grid):
-    # TODO: add option for radius/distance
-    # TODO: add option (slider) for grid size
+def get_visual(address, mode, grid, zoom):
     if not address or not mode:
         return no_display
 
@@ -127,9 +155,9 @@ def get_visual(address, mode, grid):
     print(lng)
 #52.520103, 13.404871
 
-    my_zoom = 11
-    my_grid = 20
-    my_img_side = 400
+    my_zoom = zoom
+    my_grid = grid
+    my_img_side = 320
 
     f = open(image_cache_filename, 'wb')
     for chunk in api_calls.gmaps.static_map(size=(my_img_side, my_img_side),
@@ -144,8 +172,8 @@ def get_visual(address, mode, grid):
     x, y, z = api_calls.data(address, radius, mode, grid=my_grid)
 
     fig = go.Figure(
-        data=[go.Surface(z=z, x=x, y=y, opacity=0.5)],
-        layout_title_text=f"From {address} by {mode}"
+        data=[go.Surface(z=z, x=x, y=y, opacity=0.5, showscale=False)]
+        # layout_title_text=f"From {address} by {mode}"
     )
     fig.update_traces(colorbar_thickness=50,
                       contours_z=dict(show=True, usecolormap=True,
@@ -164,18 +192,22 @@ def get_visual(address, mode, grid):
     x = np.linspace(x_min, x_max, num=my_img_side)
     y = np.linspace(y_min, y_max, num=my_img_side)
 
-    fig.add_surface(x=x, y=y, z=canvas, surfacecolor=img, colorscale='gray')
+    fig.add_surface(x=x, y=y, z=canvas, surfacecolor=img, colorscale='gray', showscale=False)
 
     fig.update_layout(title_font_size=30,
                       autosize=False,
-                      height=1200, width=1200,
+                      height=900, width=1200,
                       margin=dict(l=60, r=60, b=60, t=100, pad=50),
                       scene=dict(
                           xaxis_title='Longitude (degrees)',
                           yaxis_title='Latitude (degrees)',
                           zaxis_title='Travel time (minutes)'))
 
-    return html.Div([dcc.Graph(id="graph", figure=fig)], style={'text-align':'center'})
+    return html.Div([dcc.Graph(id="graph", figure=fig)], style={
+        'display': 'flex',
+        'align-items': 'center',
+        'justify-content': 'center',
+        'align-text':'center'})
 
 
 if __name__ == '__main__':
