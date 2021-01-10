@@ -71,9 +71,5 @@ def get_visual(address, mode):
     return html.Div([dcc.Graph(id="graph", figure=fig)])
 
 
-
-
-
-
 if __name__ == '__main__':
     app.run_server(debug=True)

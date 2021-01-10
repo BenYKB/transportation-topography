@@ -94,7 +94,7 @@ def zoom_to_radius(zoom, latitude):
     :return: radius to search based on zoom in km
     '''
 
-    metersPerPx = 156543.03392 * Math.cos(latitude * Math.PI / 180) / Math.pow(2, zoom)
+    metersPerPx = 156543.03392 * math.cos(latitude * math.PI / 180) / math.pow(2, zoom)
 
     return metersPerPx / 1000.0 * (MAX_STATIC_MAP_SIZE // 2)
 
