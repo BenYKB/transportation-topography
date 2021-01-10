@@ -1,110 +1,60 @@
+import map_methods
 import googlemaps
 from datetime import datetime
-import json
 import numpy as np
-from matplotlib import pyplot as plt
 
-LATCONV = 110.574 # [km]
-LNGCONV = 111.320 # *cos(latitude) [km]
+def data(address, radius, mode, grid=5):
+    ''' Gets x, y and z data related to travel times to locations 
+    in specified radius from a specified location.
 
-key_file = open("key.txt", "r")
-KEY = str(key_file.read())
+    :param address: A string specifying street address, city, 
+                    province and/or country. Example:
+                    '4700 Kingsway, Burnaby, BC'
 
-GRID = 5
-RADIUS = 5.0 # [km]
-address = '4700 Kingsway, Burnaby, BC'
+    :param radius: A float in kilometers specifying the radius from
+                   the address to map.
 
-gmaps = googlemaps.Client(key=KEY)
+    :param mode: A string. "driving", "walking", "bicycling", 
+                 or "transit"
 
-def getlatlng(geocode):
-    gc = json.load(geocode)
-    lat = gc[0]['geometry']['location']['lat']
-    lng = gc[0]['geometry']['location']['lng']
-    return lat, lng
+    :param grid: Spacing of grid. Default is 5
 
-def get_times(dmatrix):
-    dmat = json.load(dmatrix)
-    length = len(dmat['rows'][0]['elements'])
-    times = np.zeros(length)
-    # dists = np.zeros(length) 
-    for i in range(length):
-        times[i] = dmat['rows'][0]['elements'][i]['duration']['value'] # units in ms
-    #     dists[i] = dmat['rows'][0]['elements'][i]['distance']['value'] # units in m
-    # return times, dists
-    return times
+    :rtype: X, Y, Z. If N = grid value,
+            X: N length array of longitude values
+            Y: N length array of latitude values
+            Z: NxN array of travel times
+    '''
 
-def dist2deg(dist, lat, lng):
-    lat_deg = dist/LATCONV
-    lng_deg = dist/(LNGCONV*np.cos(lat))
-    return lat_deg, lng_deg
+    key_file = open("key.txt", "r")
+    KEY = str(key_file.read())
+    gmaps = googlemaps.Client(key=KEY)
 
-def coord_format(lat, lng, space=False):
-    cma = ','
-    if space:
-        cma = ', '
-    return str(lat) + cma + str(lng)
+    geocode = gmaps.geocode(address)
+    orig_lat, orig_lng = map_methods.getlatlng(geocode)
 
-def printcoord(lat, lng):
-    coord = coord_format(lat,lng, space=True)
-    print(coord)
+    rad_lat, rad_lng = map_methods.dist2deg(radius, orig_lat, orig_lng)
 
-def print_pretty(json_dict):
-    print(json.dumps(json_dict, indent = 4))
+    X = np.linspace(orig_lng-rad_lng, orig_lng+rad_lng, grid)
+    Y = np.linspace(orig_lat-rad_lat, orig_lat+rad_lat, grid)
 
-# metrotown_geocode = gmaps.geocode('4700 Kingsway, Burnaby, BC')
-# with open('metrotown_geocode.txt') as f:
-#     metrotown_gc = json.load(f)
-# print(metrotown_gc[0]['geometry']['location']['lat'])
+    xx, yy = np.meshgrid(X, Y)
 
-f = open('metrotown_geocode.txt','r')
-mt_lat, mt_lng = getlatlng(f)
+    coordinates = np.array(list(zip(np.ndarray.flatten(xx), np.ndarray.flatten(yy)))) # [0] is lng [1] is lat
 
-rad_lat, rad_lng = dist2deg(RADIUS, mt_lat, mt_lng)
+    dests = map_methods.coord_format(coordinates[0][1], coordinates[0][0])
+    for i in range(1, grid**2):
+        dests = dests + '|' + map_methods.coord_format(coordinates[i][1], coordinates[i][0])
+    origin = map_methods.coord_format(orig_lat, orig_lng)
 
-X = np.linspace(mt_lng-rad_lng, mt_lng+rad_lng, GRID)
-Y = np.linspace(mt_lat-rad_lat, mt_lat+rad_lat, GRID)
+    dmatrix = gmaps.distance_matrix(origin, dests, mode=mode)
+    times = map_methods.get_times(dmatrix)
 
-xx, yy = np.meshgrid(X, Y)
-# plt.plot(xx, yy, marker='.', color='k', linestyle='none')
-# plt.show()
+    rows = []
+    for i in range(grid):
+        rows.append(times[0+i*grid:grid+i*grid])
+    Z = np.stack(rows)
 
-coordinates = np.array(list(zip(np.ndarray.flatten(xx), np.ndarray.flatten(yy)))) # [0] is lng [1] is lat
-
-dests = coord_format(coordinates[0][1], coordinates[0][0])
-for i in range(1, GRID**2):
-    dests = dests + '|' + coord_format(coordinates[i][1], coordinates[i][0])
-origin = coord_format(mt_lat, mt_lng)
-
-# dmatrix = gmaps.distance_matrix(origin, dests, mode='walking')
-# with open('metrotown_times.txt', 'w') as f:
-#     json.dump(dmatrix ,f)
-f = open('metrotown_times.txt', 'r')
-times = get_times(f)
-# print(times)
-
-rows = []
-for i in range(GRID):
-  rows.append(times[0+i*GRID:GRID+i*GRID])
-
-Z = np.stack(rows)
-
-data = zip(np.ndarray.flatten(xx), np.ndarray.flatten(yy), times)
-
-
-# nw_lat = mt_lat + rad_lat
-# nw_lng = mt_lng - rad_lng 
-# se_lat = mt_lat - rad_lat
-# se_lng = mt_lng + rad_lng 
-# # printcoord(nw_lat,nw_lng)
-
-# origin = coord_format(mt_lat, mt_lng)
-# dests = coord_format(nw_lat, nw_lng) + '|' + coord_format(se_lat,se_lng)
-
-# # dmatrix = gmaps.distance_matrix(origin, dests, mode='walking')
-# f = open('metrotown_dists.txt', 'r')
-# # dmatrix_dict = json.load(f)
-# times = get_times(f)
-
+    return X, Y, Z
 
 
 
