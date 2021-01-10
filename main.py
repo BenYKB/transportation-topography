@@ -3,6 +3,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
+import api_calls
 
 
 fig = go.Figure(
@@ -22,8 +23,8 @@ main_page = html.Div([
         html.H5('How do you get around?'),
         dcc.Dropdown(
             options=[
-                {'label': 'Driving', 'value':'car'},
-                {'label': 'Cycling', 'value':'bike'},
+                {'label': 'Driving', 'value':'driving'},
+                {'label': 'Cycling', 'value':'bicycling'},
                 {'label': 'Walking', 'value':'walking'},
                 {'label': 'Transit', 'value':'transit'}
             ],
@@ -60,13 +61,20 @@ def load_map(n_clicks, address, mode):
 
 
 def get_visual(address, mode):
+    # TODO: add option for radius/distance
+    # TODO: add option (slider) for grid size
     if not address or not mode:
         return no_display
 
+    x, y, z = api_calls.data(address, 10, mode, grid=10)
+
     fig = go.Figure(
-        data=[go.Bar(y=[2, 1, 3])],
+        data=[go.Surface(z=z, x=x, y=y)],
         layout_title_text=f"From {address} by {mode}"
     )
+    # fig.update_layout(title=f'From {address} by {mode}', autosize=False,
+    #               width=500, height=500,
+    #               margin=dict(l=65, r=50, b=65, t=90))
 
     return html.Div([dcc.Graph(id="graph", figure=fig)])
 
