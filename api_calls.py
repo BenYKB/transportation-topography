@@ -5,6 +5,22 @@ import numpy as np
 import math
 
 MAX_STATIC_MAP_SIZE = 640
+DEFAULT_ZOOM = 15
+
+key_file = open("key.txt", "r")
+KEY = str(key_file.read())
+gmaps = googlemaps.Client(key=KEY)
+
+def origin_coordinates(address):
+    '''
+    By google api.
+
+    :param address: human readable address
+    :return: lat, lng
+    '''
+    geocode = gmaps.geocode(address)
+    return map_methods.getlatlng(geocode)
+
 
 def data(address, radius, mode, grid=10):
     ''' Gets x, y and z data related to travel times to locations 
@@ -25,13 +41,7 @@ def data(address, radius, mode, grid=10):
             Y: N length array of latitude values
             Z: NxN array of travel times
     '''
-
-    key_file = open("key.txt", "r")
-    KEY = str(key_file.read())
-    gmaps = googlemaps.Client(key=KEY)
-
-    geocode = gmaps.geocode(address)
-    orig_lat, orig_lng = map_methods.getlatlng(geocode)
+    orig_lat, orig_lng = origin_coordinates(address)
 
     rad_lat, rad_lng = map_methods.dist2deg(radius, orig_lat, orig_lng)
 
@@ -80,10 +90,11 @@ def data(address, radius, mode, grid=10):
     return X, Y, Z
 
 
+def get_map_iterator(address, zoom):
+    orig_lat, orig_lng = origin_coordinates(address)
 
+    return gmaps.static_map(size=(640,640), center=address, zoom=zoom, style='satellite')
 
-
-def get_map(address, zoom):
 
 def zoom_to_radius(zoom, latitude):
     '''
