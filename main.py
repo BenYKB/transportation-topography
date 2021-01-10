@@ -8,7 +8,8 @@ import numpy as np
 import skimage.io as sio
 import requests
 
-image_cache_filename = 'img.png'
+
+image_cache_filename = "img.png"
 
 fig = go.Figure(
     data=[go.Bar(y=[2, 1, 3])],
@@ -23,8 +24,8 @@ main_page = html.Div([
     ]),
     html.P('A visualization of transportation times for locations around you'),
     html.Hr(),
+    html.H5('How do you get around?'),
     html.Div([
-        html.H5('How do you get around?'),
         dcc.Dropdown(
             options=[
                 {'label': 'Driving', 'value':'driving'},
@@ -32,15 +33,58 @@ main_page = html.Div([
                 {'label': 'Walking', 'value':'walking'},
                 {'label': 'Transit', 'value':'transit'}
             ],
-            placeholder='Select a mode of transportation', id='mode')
-    ], style={'margin-top':'20px', 'margin-bottom':'20px'}),
+            placeholder='Select a mode of transportation', 
+            id='mode',
+            style={
+                'width':'400px', 
+                'justify-content': 'center', 'align-text':'center'
+            },
+        )    
+    ], 
+    style={
+        'margin-bottom':'20px',
+        'display': 'flex', 'align-items': 'center', 
+        'justify-content': 'center', 'align-text':'center'
+    }),
     html.Div([
         html.H5('Where would you like to start from?'),
-        dcc.Input(id="address", placeholder='My Street, City, Province, Country', type='text', size='30')
-    ]),
-    dbc.Button('Go!', id='go_button', color="primary", className='mr-1', outline=False, style={'margin':'20px', 'border-radius':'5px'}),
-
-], style={'text-align':'center'})
+        dcc.Input(
+            id="address", 
+            placeholder='My Street, City, Province, Country', 
+            type='text', 
+            size='30',
+            style={'margin-bottom':'20px'}
+        ),
+    ]), 
+    html.Div([
+        html.H5('How far would you like to go?'),
+        dbc.Button("Neighbourhood", color="secondary", className="mr-1", id='nbhd'), # value 12, ~6.6 km
+        dbc.Button("District", color="secondary", className="mr-1", id='district'), # value 11, ~6.6 km
+        dbc.Button("City", color="secondary", className="mr-1", id='city'), # value 10, ~6.6 km
+        dbc.Button("Region", color="secondary", className="mr-1", id='region'), # value 9, ~6.6 km
+    ], style={'margin-bottom':'20px'}),
+    html.Div([
+        html.H5('Resolution'),
+        dcc.Slider(
+            id='grid', 
+            min=5, 
+            max=30,
+            value=5,
+            step=1,
+            dots=True,
+            marks={i: '{}'.format(i) for i in range(5,31,5)}
+        ),
+    ], style={'margin-left':'300px', 'margin-right': '300px'}),
+    dbc.Button(
+        'Go!', 
+        id='go_button', 
+        color="primary", 
+        className='mr-1', 
+        outline=False, 
+        style={'margin':'20px', 'border-radius':'5px'}
+    ),
+], 
+style={'text-align':'center'})
 
 display_page = html.Div([
     dcc.Graph(id="graph", figure=fig)
@@ -58,19 +102,20 @@ app.layout = html.Div([
 @app.callback(dash.dependencies.Output('visual-content', 'children'),
               [dash.dependencies.Input('go_button', 'n_clicks')],
               [dash.dependencies.State('address', 'value')],
-              [dash.dependencies.State('mode', 'value')])
-def load_map(n_clicks, address, mode):
+              [dash.dependencies.State('mode', 'value')],
+              [dash.dependencies.State('grid', 'value')])
+def load_map(n_clicks, address, mode, grid):
     print(address)
     print(mode)
-    return get_visual(address, mode) if n_clicks else no_display
+    print(grid)
+    return get_visual(address,mode, grid) if n_clicks else no_display
 
 
-def get_visual(address, mode):
+def get_visual(address, mode, grid):
     # TODO: add option for radius/distance
     # TODO: add option (slider) for grid size
     if not address or not mode:
         return no_display
-
 
     # f = open(image_cache_filename, 'wb')
     # for chunk in api_calls.get_map_iterator(address, api_calls.DEFAULT_ZOOM):

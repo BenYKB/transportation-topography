@@ -3,7 +3,7 @@ import googlemaps
 from datetime import datetime
 import numpy as np
 import math
-import skimage.io as sio
+# import skimage.io as sio
 
 MAX_STATIC_MAP_SIZE = 640
 DEFAULT_ZOOM = 15
